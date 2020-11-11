@@ -145,23 +145,23 @@ public class Controller {
 
 	// Moves Towards the Next "3" marked by Pathfinder.java
 	public static void MoveUp() {
-
-		if (map[y][x + 1] == 3) {
+		
+		if (x+1<map[0].length && map[y][x + 1] == 3) {
 			RotateTowards(y, x + 1);
 			Move(5);
 			x++;
 			map[x][y] = 4;
-		} else if (map[y][x - 1] == 3) {
+		} else if (x-1> -1 && map[y][x - 1] == 3) {
 			RotateTowards(y, x - 1);
 			Move(5);
 			x--;
 			map[x][y] = 4;
-		} else if (map[y + 1][x] == 3) {
+		} else if (y+1<map.length && map[y + 1][x] == 3) {
 			RotateTowards(y + 1, x);
 			Move(5);
 			y++;
 			map[x][y] = 4;
-		} else if (map[y - 1][x] == 3) {
+		} else if (y-1> -1 &&map[y - 1][x] == 3) {
 			RotateTowards(y - 1, x);
 			Move(5);
 			y--;
@@ -234,7 +234,7 @@ public class Controller {
 				}
 			}
 			MazeSolver maze = new MazeSolver(map);
-			if (maze.solve(y, x, 0, 0)) {
+			if (maze.solve(x, y, 0, 0)) {
 				for (int k = 0; k < map.length; k++) {
 					for (int l = 0; l < map[k].length; l++) {
 						if (maze.map[k][l] == 3) {
@@ -258,7 +258,7 @@ public class Controller {
 
 		for (int i = 0; i < map.length; i++) {
 			for (int j = 0; j < map[i].length; j++) {
-				map[i][j] = 2;
+				map[i][j] = 0;
 			}
 		}
 

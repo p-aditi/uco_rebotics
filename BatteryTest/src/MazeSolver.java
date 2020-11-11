@@ -7,21 +7,18 @@ public class MazeSolver{
     static int endY;
 
     // @formatter:off
-    private static int[][] GRID = { 
-        { 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1 },
-        { 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1 },
-        { 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0 },
-        { 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1 },
-        { 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1 },
-        { 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1 },
-        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 } 
-    };
+   
     // @formatter:off
 
     public static void main(String[] args) {
-        MazeSolver maze = new MazeSolver(GRID);
-        boolean solved = maze.solve(0,0,2,1);
+    	int[][] map = new int[30][30];
+    	for (int i = 0; i < map.length; i++) {
+			for (int j = 0; j < map[i].length; j++) {
+				map[i][j] = 0;
+			}
+		}
+        MazeSolver maze = new MazeSolver(map);
+        boolean solved = maze.solve(29,29,0,0);
         System.out.println("Solved: " + solved);
         System.out.println(maze.toString());
     }
