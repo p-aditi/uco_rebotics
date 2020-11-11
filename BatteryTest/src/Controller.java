@@ -61,7 +61,7 @@ public class Controller {
 
 	// Gets the Distance
 	public static float getDistance() {
-		float distance;
+		float distance 5.0;
 		SampleProvider distance_provider = uss_sensor.getMode("Distance");
 		float[] sample = new float[distance_provider.sampleSize()];
 		distance_provider.fetchSample(sample, 0);
@@ -74,7 +74,7 @@ public class Controller {
 	}
 
 	public static float getAngle(){
-		float angle;
+		float angle = 0;
 		SampleProvider angle_provider = gyro_sensor.getMode("Angle");
 		float[] sample = new float[angle_provider.sampleSize()];
 		angle_provider.fetchSample(sample,0);
@@ -86,12 +86,43 @@ public class Controller {
 	}
 
 	public static void Rotate(int degree) {
+		
 		pilot.rotate(degree);
+		int currentAngle = getAngle();
+		while(currentAngle > 360){
+			currentAngle = currentAngle - 360; //gyro will add or subtract past 360, correct for this.
+		}
+		while(currentAngle < 0){
+			currentAngle = currentAngle + 360;
+		}
+
+		if(currentAngle < degree)
+		{// if it couldn't get an accurate turn the first time, it likely won't the second either. we can tighten it a bit though.
+			pilote.rotate((degree - currentAngle) / 2); // try to move about half the distance, to get a little more accuracy
+		} 
+		else if(currentAngle > degree){
+			pilot.rotate((currentAngle - degree) / 2)); // try to move about half the distance, to get a little more accuracy
+		}
+		r += 90; // Josh likely depends on this somewhere, but you could set it based off gyro, youd have to adjust for inaccuracies.
+		if (r == 360) {
+			r = 0;
+		}
+	}
+
+
+
+   /*
+	public static void Rotate(int degree) {
+		
+		pilot.rotate(degree);
+		
 		r += 90;
 		if (r == 360) {
 			r = 0;
 		}
 	}
+	*/
+
 
 	// moves an amount int centimeters.
 	public static void Move(int amount) {
