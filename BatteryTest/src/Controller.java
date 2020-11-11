@@ -1,6 +1,7 @@
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.port.MotorPort;
 import lejos.hardware.port.SensorPort;
+import lejos.hardware.sensor.EV3GyroSensor;
 import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.hardware.sensor.SensorModes;
 import lejos.robotics.SampleProvider;
@@ -14,8 +15,8 @@ public class Controller {
 	static EV3LargeRegulatedMotor LEFT_MOTOR = new EV3LargeRegulatedMotor(MotorPort.B);
 	static EV3LargeRegulatedMotor RIGHT_MOTOR = new EV3LargeRegulatedMotor(MotorPort.A);
 	static SensorModes uss_sensor = new EV3UltrasonicSensor(SensorPort.S4);
-	static SensorModes gyro_sensor = new Ev3GyroSensor(SensorPort.S3);
-	static int[][] map = new int[30][30];
+	static SensorModes gyro_sensor = new EV3GyroSensor(SensorPort.S3);
+	static int[][] map = new int[30][30]; //TODO
 
 	static int x;
 	static int y;
@@ -61,11 +62,11 @@ public class Controller {
 
 	// Gets the Distance
 	public static float getDistance() {
-		float distance;
+		float distance = 5;
 		SampleProvider distance_provider = uss_sensor.getMode("Distance");
 		float[] sample = new float[distance_provider.sampleSize()];
 		distance_provider.fetchSample(sample, 0);
-		for(int i = 0; i < distance_provider.sampleSize()){
+		for(int i = 0; i < distance_provider.sampleSize(); i++){
 			distance += sample[i];
 		}
 		distance = distance / distance_provider.sampleSize();
@@ -74,11 +75,11 @@ public class Controller {
 	}
 
 	public static float getAngle(){
-		float angle;
+		float angle = 0;
 		SampleProvider angle_provider = gyro_sensor.getMode("Angle");
 		float[] sample = new float[angle_provider.sampleSize()];
 		angle_provider.fetchSample(sample,0);
-		for(int i = 0; i < angle_provider.sampleSize()){
+		for(int i = 0; i < angle_provider.sampleSize();i++){
 			angle += sample[i];
 		}
 		angle = angle / angle_provider.sampleSize();
