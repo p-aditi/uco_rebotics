@@ -33,7 +33,7 @@ public class MapTest{
       
       //TODO: rotate 180 and keep track of 
       int x = 29;
-      int y =29;
+      int y = 29;
       int r = 270;
       int[][] map = new int[30][30];
       
@@ -65,6 +65,9 @@ public class MapTest{
 
                 switch(r) {
                 case 90:
+                if(x >= map.length) {
+                	pilot.rotate(180);
+                }
                 map[y][x+1] = 1;
                 break;
                 case 180:
