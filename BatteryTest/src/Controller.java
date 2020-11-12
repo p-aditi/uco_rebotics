@@ -16,7 +16,14 @@ public class Controller {
 	static EV3LargeRegulatedMotor RIGHT_MOTOR = new EV3LargeRegulatedMotor(MotorPort.A);
 	static SensorModes uss_sensor = new EV3UltrasonicSensor(SensorPort.S4);
 	static SensorModes gyro_sensor = new EV3GyroSensor(SensorPort.S3);
-	static int[][] map = new int[30][30]; //TODO
+	static int[][] grid = new int[23][28]; //TODO 23 width x 28 length
+	//0 - empty, 1 - block, 2 unknown, 3 path
+	
+	static int startY = grid.length-1;
+	static int startX = grid[0].length-1;
+	static int startRotation = 270;
+	static int endX = 0;
+	static int endY = 0;
 
 	static int x;
 	static int y;
@@ -36,14 +43,13 @@ public class Controller {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-		float distanceValue = 0;
-		initializeMap(29, 29, 270);// x,y,r
+		float distanceValue;
+		initializeMap(startX, startY, startRotation);// x,y,r
 		resetGrid();
 
 		int index = 0;
 		while (true) {
 			index++; // Won't be Needed'
-
 			distanceValue = getDistance();
 			NextMove(distanceValue);
 		}
@@ -51,9 +57,9 @@ public class Controller {
 	}
 
 	public static void printMap() {
-		for (int i = 0; i < map.length; i++) {
-			for (int j = 0; j < map[i].length; j++) {
-				System.out.print(map[i][j] + " , ");
+		for (int i = 0; i < grid.length; i++) {
+			for (int j = 0; j < grid[i].length; j++) {
+				System.out.print(grid[i][j] + " , ");
 
 			}
 			System.out.println("");
@@ -120,8 +126,8 @@ public class Controller {
 			// restart the algorithm and mark the path.
 			switch (r) {
 			case 90:
-				if (map[y][x + 1] != 1) {
-					map[y][x + 1] = 1;
+				if (grid[y][x + 1] != 1) {
+					grid[y][x + 1] = 1;
 					startPathfinding();
 				} else {
 					MoveUp();
@@ -129,24 +135,24 @@ public class Controller {
 
 				break;
 			case 180:
-				if (map[y + 1][x] != 1) {
-					map[y + 1][x] = 1;
+				if (grid[y + 1][x] != 1) {
+					grid[y + 1][x] = 1;
 					startPathfinding();
 				} else {
 					MoveUp();
 				}
 				break;
 			case 270:
-				if (map[y][x - 1] != 1) {
-					map[y][x - 1] = 1;
+				if (grid[y][x - 1] != 1) {
+					grid[y][x - 1] = 1;
 					startPathfinding();
 				} else {
 					MoveUp();
 				}
 				break;
 			case 0:
-				if (map[y - 1][x] != 1) {
-					map[y - 1][x] = 1;
+				if (grid[y - 1][x] != 1) {
+					grid[y - 1][x] = 1;
 					startPathfinding();
 				} else {
 					MoveUp();
@@ -164,27 +170,27 @@ public class Controller {
 
 	// Moves Towards the Next "3" marked by Pathfinder.java
 	public static void MoveUp() {
-
-		if (map[y][x + 1] == 3) {
+		
+		if (x < grid[0].length-1 && grid[y][x + 1] == 3) { //checking right grid
 			RotateTowards(y, x + 1);
 			Move(5);
 			x++;
-			map[x][y] = 4;
-		} else if (map[y][x - 1] == 3) {
+			grid[y][x] = 4;
+		} else if (x > 0 && grid[y][x - 1] == 3) {  //checking left grid
 			RotateTowards(y, x - 1);
 			Move(5);
 			x--;
-			map[x][y] = 4;
-		} else if (map[y + 1][x] == 3) {
+			grid[y][x] = 4;
+		} else if (y < grid.length-1 && grid[y + 1][x] == 3) { //checking bottom grid
 			RotateTowards(y + 1, x);
 			Move(5);
 			y++;
-			map[x][y] = 4;
-		} else if (map[y - 1][x] == 3) {
+			grid[y][x] = 4;
+		} else if (y > 0 && grid[y - 1][x] == 3) { //checking top grid
 			RotateTowards(y - 1, x);
 			Move(5);
 			y--;
-			map[x][y] = 4;
+			grid[y][x] = 4;
 		}
 
 	}
@@ -246,18 +252,19 @@ public class Controller {
 
 	// Resets all the 4s and 3s back to 0s
 	public static void resetGrid() {
-		for (int i = 0; i < map.length; i++) {
-			for (int j = 0; j < map[i].length; j++) {
-				if (map[i][j] == 3 || map[i][j] == 4) {
-					map[i][j] = 0;
+		for (int i = 0; i < grid.length; i++) {
+			for (int j = 0; j < grid[i].length; j++) {
+				if (grid[i][j] == 3 || grid[i][j] == 4) {
+					grid[i][j] = 0;
 				}
 			}
-			MazeSolver maze = new MazeSolver(map);
-			if (maze.solve(y, x, 0, 0)) {
-				for (int k = 0; k < map.length; k++) {
-					for (int l = 0; l < map[k].length; l++) {
+	       
+			MazeSolver maze = new MazeSolver(grid);
+			if (maze.solve(y, x, endX, endY)) {
+				for (int k = 0; k < grid.length; k++) {
+					for (int l = 0; l < grid[k].length; l++) {
 						if (maze.map[k][l] == 3) {
-							map[k][l] = 3;
+							grid[k][l] = 3;
 						}
 					}
 
@@ -275,9 +282,9 @@ public class Controller {
 		y = yLocal;
 		r = rLocal;
 
-		for (int i = 0; i < map.length; i++) {
-			for (int j = 0; j < map[i].length; j++) {
-				map[i][j] = 2;
+		for (int i = 0; i < grid.length; i++) {
+			for (int j = 0; j < grid[i].length; j++) {
+				grid[i][j] = 0;
 			}
 		}
 
