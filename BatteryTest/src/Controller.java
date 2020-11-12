@@ -1,6 +1,7 @@
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.port.MotorPort;
 import lejos.hardware.port.SensorPort;
+import lejos.hardware.sensor.EV3GyroSensor;
 import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.hardware.sensor.SensorModes;
 import lejos.robotics.SampleProvider;
@@ -14,8 +15,12 @@ public class Controller {
 	static EV3LargeRegulatedMotor LEFT_MOTOR = new EV3LargeRegulatedMotor(MotorPort.B);
 	static EV3LargeRegulatedMotor RIGHT_MOTOR = new EV3LargeRegulatedMotor(MotorPort.A);
 	static SensorModes uss_sensor = new EV3UltrasonicSensor(SensorPort.S4);
-	static SensorModes gyro_sensor = new Ev3GyroSensor(SensorPort.S3);
-	static int[][] map = new int[30][30];
+	static SensorModes gyro_sensor = new EV3GyroSensor(SensorPort.S3);
+	static int[][] map = new int[30][30]; //TODO update w/ grid size
+	
+	static final int OPEN = 0;
+	static final int OBSTACLE = 1;
+	static final int PATH = 3;
 
 	static int x;
 	static int y;
@@ -61,11 +66,13 @@ public class Controller {
 
 	// Gets the Distance
 	public static float getDistance() {
+
 		float distance 5.0;
+
 		SampleProvider distance_provider = uss_sensor.getMode("Distance");
 		float[] sample = new float[distance_provider.sampleSize()];
 		distance_provider.fetchSample(sample, 0);
-		for(int i = 0; i < distance_provider.sampleSize()){
+		for(int i = 0; i < distance_provider.sampleSize(); i++){
 			distance += sample[i];
 		}
 		distance = distance / distance_provider.sampleSize();
@@ -78,7 +85,7 @@ public class Controller {
 		SampleProvider angle_provider = gyro_sensor.getMode("Angle");
 		float[] sample = new float[angle_provider.sampleSize()];
 		angle_provider.fetchSample(sample,0);
-		for(int i = 0; i < angle_provider.sampleSize()){
+		for(int i = 0; i < angle_provider.sampleSize();i++){
 			angle += sample[i];
 		}
 		angle = angle / angle_provider.sampleSize();
@@ -150,33 +157,33 @@ public class Controller {
 			// restart the algorithm and mark the path.
 			switch (r) {
 			case 90:
-				if (map[y][x + 1] != 1) {
-					map[y][x + 1] = 1;
-					startPathfinding();
+				if (map[y][x + 1] != OBSTACLE) { //is there obstacle on map?
+					map[y][x + 1] = OBSTACLE; // mark map
+					startPathfinding(); //find new path
 				} else {
 					MoveUp();
 				}
 
 				break;
 			case 180:
-				if (map[y + 1][x] != 1) {
-					map[y + 1][x] = 1;
+				if (map[y + 1][x] != OBSTACLE) {
+					map[y + 1][x] = OBSTACLE;
 					startPathfinding();
 				} else {
 					MoveUp();
 				}
 				break;
 			case 270:
-				if (map[y][x - 1] != 1) {
-					map[y][x - 1] = 1;
+				if (map[y][x - 1] != OBSTACLE) {
+					map[y][x - 1] = OBSTACLE;
 					startPathfinding();
 				} else {
 					MoveUp();
 				}
 				break;
 			case 0:
-				if (map[y - 1][x] != 1) {
-					map[y - 1][x] = 1;
+				if (map[y - 1][x] != OBSTACLE) {
+					map[y - 1][x] = OBSTACLE;
 					startPathfinding();
 				} else {
 					MoveUp();
@@ -195,26 +202,26 @@ public class Controller {
 	// Moves Towards the Next "3" marked by Pathfinder.java
 	public static void MoveUp() {
 
-		if (map[y][x + 1] == 3) {
+		if (map[y][x + 1] == PATH) { 
 			RotateTowards(y, x + 1);
 			Move(5);
-			x++;
-			map[x][y] = 4;
-		} else if (map[y][x - 1] == 3) {
+			
+			map[x][y] = OPEN;
+		} else if (map[y][x - 1] == PATH) {
 			RotateTowards(y, x - 1);
 			Move(5);
-			x--;
-			map[x][y] = 4;
-		} else if (map[y + 1][x] == 3) {
+			
+			map[x][y] = OPEN;
+		} else if (map[y + 1][x] == PATH) {
 			RotateTowards(y + 1, x);
 			Move(5);
-			y++;
-			map[x][y] = 4;
-		} else if (map[y - 1][x] == 3) {
+		
+			map[x][y] = OPEN;
+		} else if (map[y - 1][x] == PATH) {
 			RotateTowards(y - 1, x);
 			Move(5);
-			y--;
-			map[x][y] = 4;
+		
+			map[x][y] = OPEN;
 		}
 
 	}
@@ -278,16 +285,16 @@ public class Controller {
 	public static void resetGrid() {
 		for (int i = 0; i < map.length; i++) {
 			for (int j = 0; j < map[i].length; j++) {
-				if (map[i][j] == 3 || map[i][j] == 4) {
-					map[i][j] = 0;
+				if (map[i][j] == PATH || map[i][j] == 4) {
+					map[i][j] = OPEN;
 				}
 			}
 			MazeSolver maze = new MazeSolver(map);
 			if (maze.solve(y, x, 0, 0)) {
 				for (int k = 0; k < map.length; k++) {
 					for (int l = 0; l < map[k].length; l++) {
-						if (maze.map[k][l] == 3) {
-							map[k][l] = 3;
+						if (maze.map[k][l] == PATH) {
+							map[k][l] = PATH;
 						}
 					}
 
@@ -307,7 +314,7 @@ public class Controller {
 
 		for (int i = 0; i < map.length; i++) {
 			for (int j = 0; j < map[i].length; j++) {
-				map[i][j] = 2;
+				map[i][j] = OPEN;
 			}
 		}
 
