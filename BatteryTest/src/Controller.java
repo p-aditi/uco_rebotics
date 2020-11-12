@@ -16,6 +16,7 @@ public class Controller {
 	static EV3LargeRegulatedMotor RIGHT_MOTOR = new EV3LargeRegulatedMotor(MotorPort.A);
 	static SensorModes uss_sensor = new EV3UltrasonicSensor(SensorPort.S4);
 	static SensorModes gyro_sensor = new EV3GyroSensor(SensorPort.S3);
+
 	static int[][] grid = new int[23][28]; //TODO 23 width x 28 length
 	//0 - empty, 1 - block, 2 unknown, 3 path
 	
@@ -24,6 +25,10 @@ public class Controller {
 	static int startRotation = 270;
 	static int endX = 0;
 	static int endY = 0;
+  static final int OPEN = 0;
+	static final int OBSTACLE = 1;
+	static final int PATH = 3;
+
 
 	static int x;
 	static int y;
@@ -68,7 +73,11 @@ public class Controller {
 
 	// Gets the Distance
 	public static float getDistance() {
-		float distance = 5;
+
+
+		float distance 5.0;
+
+
 		SampleProvider distance_provider = uss_sensor.getMode("Distance");
 		float[] sample = new float[distance_provider.sampleSize()];
 		distance_provider.fetchSample(sample, 0);
@@ -93,12 +102,43 @@ public class Controller {
 	}
 
 	public static void Rotate(int degree) {
+		
 		pilot.rotate(degree);
+		int currentAngle = getAngle();
+		while(currentAngle > 360){
+			currentAngle = currentAngle - 360; //gyro will add or subtract past 360, correct for this.
+		}
+		while(currentAngle < 0){
+			currentAngle = currentAngle + 360;
+		}
+
+		if(currentAngle < degree)
+		{// if it couldn't get an accurate turn the first time, it likely won't the second either. we can tighten it a bit though.
+			pilote.rotate((degree - currentAngle) / 2); // try to move about half the distance, to get a little more accuracy
+		} 
+		else if(currentAngle > degree){
+			pilot.rotate((currentAngle - degree) / 2)); // try to move about half the distance, to get a little more accuracy
+		}
+		r += 90; // Josh likely depends on this somewhere, but you could set it based off gyro, youd have to adjust for inaccuracies.
+		if (r == 360) {
+			r = 0;
+		}
+	}
+
+
+
+   /*
+	public static void Rotate(int degree) {
+		
+		pilot.rotate(degree);
+		
 		r += 90;
 		if (r == 360) {
 			r = 0;
 		}
 	}
+	*/
+
 
 	// moves an amount int centimeters.
 	public static void Move(int amount) {
@@ -126,33 +166,45 @@ public class Controller {
 			// restart the algorithm and mark the path.
 			switch (r) {
 			case 90:
-				if (grid[y][x + 1] != 1) {
-					grid[y][x + 1] = 1;
+
+				if (map[y][x + 1] != OBSTACLE) { //is there obstacle on map?
+					map[y][x + 1] = OBSTACLE; // mark map
+					startPathfinding(); //find new path
+
+				if (grid[y][x + 1] != OBSTACLE) {
+					grid[y][x + 1] = OBSTACLE;
 					startPathfinding();
+
 				} else {
 					MoveUp();
 				}
 
 				break;
 			case 180:
-				if (grid[y + 1][x] != 1) {
-					grid[y + 1][x] = 1;
+				if (grid[y + 1][x] != OBSTACLE) {
+					grid[y + 1][x] = OBSTACLE;
+
 					startPathfinding();
 				} else {
 					MoveUp();
 				}
 				break;
 			case 270:
-				if (grid[y][x - 1] != 1) {
-					grid[y][x - 1] = 1;
+
+			
+
+				if (grid[y][x - 1] != OBSTACLE) {
+					grid[y][x - 1] = OBSTACLE;
+
 					startPathfinding();
 				} else {
 					MoveUp();
 				}
 				break;
 			case 0:
-				if (grid[y - 1][x] != 1) {
-					grid[y - 1][x] = 1;
+
+				if (grid[y - 1][x] != OBSTACLE) {
+					grid[y - 1][x] = OBSTACLE;
 					startPathfinding();
 				} else {
 					MoveUp();
@@ -170,27 +222,50 @@ public class Controller {
 
 	// Moves Towards the Next "3" marked by Pathfinder.java
 	public static void MoveUp() {
+
+		if (map[y][x + 1] == PATH) { 
+			RotateTowards(y, x + 1);
+			Move(5);
+			
+			map[x][y] = OPEN;
+		} else if (map[y][x - 1] == PATH) {
+			RotateTowards(y, x - 1);
+			Move(5);
+			
+			map[x][y] = OPEN;
+		} else if (map[y + 1][x] == PATH) {
+			RotateTowards(y + 1, x);
+			Move(5);
 		
-		if (x < grid[0].length-1 && grid[y][x + 1] == 3) { //checking right grid
+			map[x][y] = OPEN;
+		} else if (map[y - 1][x] == PATH) {
+			RotateTowards(y - 1, x);
+			Move(5);
+		
+			map[x][y] = OPEN;
+
+		
+		if (x < grid[0].length-1 && grid[y][x + 1] == PATH) { //checking right grid
 			RotateTowards(y, x + 1);
 			Move(5);
 			x++;
 			grid[y][x] = 4;
-		} else if (x > 0 && grid[y][x - 1] == 3) {  //checking left grid
+		} else if (x > 0 && grid[y][x - 1] == PATH) {  //checking left grid
 			RotateTowards(y, x - 1);
 			Move(5);
 			x--;
 			grid[y][x] = 4;
-		} else if (y < grid.length-1 && grid[y + 1][x] == 3) { //checking bottom grid
+		} else if (y < grid.length-1 && grid[y + 1][x] == PATH) { //checking bottom grid
 			RotateTowards(y + 1, x);
 			Move(5);
 			y++;
 			grid[y][x] = 4;
-		} else if (y > 0 && grid[y - 1][x] == 3) { //checking top grid
+		} else if (y > 0 && grid[y - 1][x] == PATH) { //checking top grid
 			RotateTowards(y - 1, x);
 			Move(5);
 			y--;
 			grid[y][x] = 4;
+
 		}
 
 	}
@@ -252,10 +327,11 @@ public class Controller {
 
 	// Resets all the 4s and 3s back to 0s
 	public static void resetGrid() {
+
 		for (int i = 0; i < grid.length; i++) {
 			for (int j = 0; j < grid[i].length; j++) {
-				if (grid[i][j] == 3 || grid[i][j] == 4) {
-					grid[i][j] = 0;
+				if (grid[i][j] == PATH || grid[i][j] == 4) {
+					grid[i][j] = OPEN;
 				}
 			}
 	       
@@ -263,8 +339,8 @@ public class Controller {
 			if (maze.solve(y, x, endX, endY)) {
 				for (int k = 0; k < grid.length; k++) {
 					for (int l = 0; l < grid[k].length; l++) {
-						if (maze.map[k][l] == 3) {
-							grid[k][l] = 3;
+						if (maze.map[k][l] == PATH) {
+							grid[k][l] = PATH;
 						}
 					}
 
@@ -284,7 +360,8 @@ public class Controller {
 
 		for (int i = 0; i < grid.length; i++) {
 			for (int j = 0; j < grid[i].length; j++) {
-				grid[i][j] = 0;
+				grid[i][j] = OPEN;
+
 			}
 		}
 
